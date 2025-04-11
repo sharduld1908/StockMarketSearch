@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import axios from 'axios';
 import React from 'react'
 import './SearchBar.css';
 
@@ -6,12 +7,18 @@ const SearchBar = () => {
     const [query, setQuery] = useState<string>('');
     const [isFocused, setIsFocused] = useState<boolean>(false);
     const inputRef = useRef<HTMLInputElement>(null);
+    const [results, setResults] = useState<any[]>([]);
+    const [loading, setLoading] = useState<boolean>(false); // New loading state
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         console.log("Form submitted");
         console.log("Search query:", query);
         // Add your search logic here
+    };
+
+    const handleInputChange = (e:  React.ChangeEvent<HTMLInputElement>) => {
+        setQuery(e.target.value);
     };
 
     const handleClear = () => {
@@ -21,6 +28,37 @@ const SearchBar = () => {
         }
     };
 
+    const fetchSuggestions = useCallback(async (searchTerm: string) => {
+        if (!searchTerm) {
+            setResults([]);
+            return;
+        }
+        
+        setLoading(true); // Set loading to true when fetching
+        setResults([]); // Clear previous results
+        try {
+            const response = await axios.get('http://localhost:3000/search', {
+                params: { q: searchTerm }
+            });
+            setResults(response.data.result);
+        } 
+        catch (error) {
+            console.error("Error fetching search results:", error);
+        }
+        finally {
+            setLoading(false); // Set loading to false after fetching
+        }
+    }, []);
+
+    // Debounce
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            fetchSuggestions(query);
+        }, 500); // 500ms debounce
+
+        return () => clearTimeout(timeoutId);
+    }, [query, fetchSuggestions]);
+
     return (
         <div className={`ticker-search-container ${isFocused ? 'focused' : ''}`}>
             <div className="search-input-wrapper">
@@ -28,7 +66,7 @@ const SearchBar = () => {
                     ref={inputRef} 
                     type='text' 
                     value={query} 
-                    onChange={(e:  React.ChangeEvent<HTMLInputElement>) => {setQuery(e.target.value)}}
+                    onChange={handleInputChange}
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
                     placeholder={"Enter stock ticker symbol"}
@@ -52,6 +90,30 @@ const SearchBar = () => {
                     </button>
                 )}
             </div>
+
+            {/* 🔽 Display suggestions */}
+            {results.length > 0 && (
+                <ul className="search-suggestions">
+                    {results.map((item, index) => (
+                        <div className='search-suggestion-list-div' key={index}>
+                            <li key={index}>
+                                {item.symbol} | {item.description}
+                            </li>
+                            <hr/>
+                        </div>
+                    ))}
+                </ul>
+            )}
+
+            {/* Show spinner in dropdown area when loading */}
+            {loading && query && !results.length && (
+                <div className="search-suggestions loading-dropdown">
+                    <div className="loading-container">
+                        <div className="spinner"></div>
+                        <span>Loading...</span>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

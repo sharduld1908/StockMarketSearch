@@ -1,13 +1,16 @@
 import express, {Request, Response} from 'express';
 import axios from 'axios';
 import dotenv from 'dotenv';
+import cors from 'cors';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.get('/', (req: Request, res: Response) => {
+app.use(cors());
+
+app.get('/', (req, res) => {
     res.send('Welcome to the Finnhub API Proxy!');
 });
 
