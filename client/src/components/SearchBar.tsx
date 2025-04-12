@@ -3,18 +3,33 @@ import axios from 'axios';
 import React from 'react'
 import './SearchBar.css';
 
-const SearchBar = () => {
+interface SearchBarProps {
+    onSearch: (stockSymbol: string) => void; // Callback to pass the selected stock symbol
+}
+
+const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
     const [query, setQuery] = useState<string>('');
     const [isFocused, setIsFocused] = useState<boolean>(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const [results, setResults] = useState<any[]>([]);
-    const [loading, setLoading] = useState<boolean>(false); // New loading state
+    const [loading, setLoading] = useState<boolean>(false);
+    const [isSuggestionSelected, setIsSuggestionSelected] = useState(false);
+
+    const handleSuggestionClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        const selectedSymbol = e.currentTarget.textContent?.split(' | ')[0]; // Extract the symbol from the clicked item
+        if (selectedSymbol) {
+            setQuery(selectedSymbol);
+            setResults([]);
+            setLoading(false);
+            setIsSuggestionSelected(true);
+        }
+    }
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        console.log("Form submitted");
-        console.log("Search query:", query);
-        // Add your search logic here
+        onSearch(query);
+        setResults([]);
+        setLoading(false);
     };
 
     const handleInputChange = (e:  React.ChangeEvent<HTMLInputElement>) => {
@@ -37,7 +52,7 @@ const SearchBar = () => {
         setLoading(true); // Set loading to true when fetching
         setResults([]); // Clear previous results
         try {
-            const response = await axios.get('http://localhost:3000/search', {
+            const response = await axios.get<{ result: any[] }>('http://localhost:3000/search', {
                 params: { q: searchTerm }
             });
             setResults(response.data.result);
@@ -52,9 +67,14 @@ const SearchBar = () => {
 
     // Debounce
     useEffect(() => {
+        if (isSuggestionSelected) {
+            setIsSuggestionSelected(false);
+            return;
+        }
+
         const timeoutId = setTimeout(() => {
             fetchSuggestions(query);
-        }, 500); // 500ms debounce
+        }, 500);
 
         return () => clearTimeout(timeoutId);
     }, [query, fetchSuggestions]);
@@ -95,7 +115,7 @@ const SearchBar = () => {
             {results.length > 0 && (
                 <ul className="search-suggestions">
                     {results.map((item, index) => (
-                        <div className='search-suggestion-list-div' key={index}>
+                        <div onClick={handleSuggestionClick} className='search-suggestion-list-div' key={index}>
                             <li key={index}>
                                 {item.symbol} | {item.description}
                             </li>
