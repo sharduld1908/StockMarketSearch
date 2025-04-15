@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
-import SearchBar from './SearchBar';
-import StockDetails from './StockDetails';
-import './SearchContent.css';
+import SearchBar from './SearchInput';
+import StockDetails from './StockCard/StockCard';
+import styles from './Search.module.css';
 
-const SearchContent: React.FC = () => {
+const Search: React.FC = () => {
   const [selectedStock, setSelectedStock] = useState<string | null>(null);
 
   const handleSearch = (stockSymbol: string) => {
@@ -12,7 +12,7 @@ const SearchContent: React.FC = () => {
   };
 
   return (
-    <div className='search'>
+    <div className={styles.search}>
       <h1>STOCK SEARCH</h1>
       <SearchBar onSearch={handleSearch}/>
       {selectedStock && <StockDetails stockSymbol={selectedStock} />}
@@ -20,4 +20,4 @@ const SearchContent: React.FC = () => {
   );
 };
 
-export default SearchContent;
+export default Search;

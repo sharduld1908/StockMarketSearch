@@ -1,13 +1,13 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import axios from 'axios';
 import React from 'react'
-import './SearchBar.css';
+import './SearchInput.css';
 
 interface SearchBarProps {
     onSearch: (stockSymbol: string) => void; // Callback to pass the selected stock symbol
 }
 
-const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
+const SearchInput: React.FC<SearchBarProps> = ({ onSearch }) => {
     const [query, setQuery] = useState<string>('');
     const [isFocused, setIsFocused] = useState<boolean>(false);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -138,4 +138,4 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
     )
 }
 
-export default SearchBar;
+export default SearchInput;
