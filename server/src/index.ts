@@ -1,20 +1,20 @@
-import express, {Request, Response} from 'express';
-import axios from 'axios';
-import dotenv from 'dotenv';
+import express, { Request, Response, NextFunction  } from 'express';
 import cors from 'cors';
-
-dotenv.config();
+import * as config from './config/config';
+import * as finnhubService from './services/finnhub.service';
+import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = config.port; // Use the port from config
 
 app.use(cors());
 
 app.get('/', (req, res) => {
+    console.log('Received request on root endpoint!!!!!');
     res.send('Welcome to the Finnhub API Proxy!');
 });
 
-app.get('/search', async (req: Request, res: Response) => {
+app.get('/search', async (req: Request, res: Response, next: NextFunction): Promise<any> => {
     const query = req.query.q as string;
 
     if (!query) {
@@ -22,20 +22,27 @@ app.get('/search', async (req: Request, res: Response) => {
     }
 
     try {
-        const response = await axios.get('https://finnhub.io/api/v1/search', {
-            params: {
-                q: query,
-                token: process.env.FINNHUB_API_KEY,
-            },
-        });
-      
-        res.json(response.data);
-    }
-    catch (error) {
-        console.error('Error fetching from Finnhub:', (error as Error).message);
-        return res.status(500).json({ error: 'An error occurred while processing your request' });
+        console.log('Searching Query:', query);
+        const filteredResult = await finnhubService.searchStocks(query);
+        console.log('Filtered Result:', filteredResult);
+        res.json(filteredResult);
+    } catch (error) {
+        next(error); // Pass errors to the error handler (to be implemented later)
     }
 });
+
+app.get('/api/stock/:symbol', async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+    const { symbol } = req.params;
+
+    try {
+        const stockDetails = await finnhubService.getStockDetails(symbol);
+        res.json(stockDetails);
+    } catch (error) {
+        next(error); // Pass errors to the error handler
+    }
+});
+
+app.use(errorHandler); // Use the error handling middleware
 
 app.listen(PORT, () => {
     console.log(`Server is running at http://localhost:${PORT}`);

@@ -7,11 +7,16 @@ interface SearchBarProps {
     onSearch: (stockSymbol: string) => void; // Callback to pass the selected stock symbol
 }
 
+interface SearchResult {
+    symbol: string;
+    description: string;
+}
+
 const SearchInput: React.FC<SearchBarProps> = ({ onSearch }) => {
     const [query, setQuery] = useState<string>('');
     const [isFocused, setIsFocused] = useState<boolean>(false);
     const inputRef = useRef<HTMLInputElement>(null);
-    const [results, setResults] = useState<any[]>([]);
+    const [results, setResults] = useState<SearchResult[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [isSuggestionSelected, setIsSuggestionSelected] = useState(false);
 
@@ -52,10 +57,10 @@ const SearchInput: React.FC<SearchBarProps> = ({ onSearch }) => {
         setLoading(true); // Set loading to true when fetching
         setResults([]); // Clear previous results
         try {
-            const response = await axios.get<{ result: any[] }>('http://localhost:3000/search', {
+            const response = await axios.get<{ result: SearchResult[] }>('http://localhost:3000/search', {
                 params: { q: searchTerm }
             });
-            setResults(response.data.result);
+            setResults(response.data);
         } 
         catch (error) {
             console.error("Error fetching search results:", error);

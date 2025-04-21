@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Star } from 'lucide-react'; // Assuming you're using phosphor-react for the star icon
 import './StockCard.css';
 
@@ -6,8 +6,7 @@ interface StockCardProps {
   stockSymbol: string;
 }
 
-
-const stockData = {
+const stockDataTemp = {
   symbol: "AAPL",
   name: "Apple Inc",
   exchange: "NASDAQ NMS - GLOBAL MARKET",
@@ -47,6 +46,34 @@ const hourlyData = [
 const StockCard: React.FC<StockCardProps> = ({ stockSymbol }) => {
   const [favorite, setFavorite] = useState(false);
 
+  const [stockData, setStockData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStockData = async () => {
+      try {
+        const res = await fetch(`http://localhost:3000/api/stock/${stockSymbol}`);
+        const data = await res.json();
+        setStockData(data);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching stock data:", err);
+        setLoading(false);
+      }
+    };
+    fetchStockData();
+  }, [stockSymbol]);
+
+  // useEffect(() => {
+  //   if(stockData) {
+  //     console.log("Stock Data:", stockData);
+  //   }
+  // }, [stockData]);
+
+  if (loading || !stockData) {
+    return <div>Loading...</div>;
+  }
+
   const minPrice = Math.floor(Math.min(...hourlyData.map(d => d.price)) * 10) / 10;
   const maxPrice = Math.ceil(Math.max(...hourlyData.map(d => d.price)) * 10) / 10;
 
@@ -85,16 +112,19 @@ const StockCard: React.FC<StockCardProps> = ({ stockSymbol }) => {
           <div className="logo-container">
             <div className="logo-icon">
               {/* Simple wave icon as shown in your image */}
-              <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                <circle cx="16" cy="10" r="3" fill="white" />
-                <path d="M4 18C8 10 12 22 16 18C20 14 24 24 28 18" stroke="white" strokeWidth="2" />
-              </svg>
+              <img 
+                src={stockData.logo} 
+                alt="Logo" 
+                width="96" 
+                height="96"
+                onError={() => console.log('Failed to load image')}
+              />
             </div>
           </div>
         
           {/* Right side price section */}
           <div className='stock-price'>
-            <div className='current-price'>{stockData.price}</div>
+            <div className='current-price'>${stockData.price}</div>
             <div className={`price-change ${stockData.change >= 0 ? 'positive' : 'negative'}`}>
               {stockData.change >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
               <span>{stockData.change.toFixed(2)} ({stockData.changePercent.toFixed(2)}%)</span>
@@ -107,7 +137,7 @@ const StockCard: React.FC<StockCardProps> = ({ stockSymbol }) => {
 
         {/* Market status */}
         <div className="market-status">
-          <p className="status-text">Market is {stockData.marketStatus}</p>
+          <p className="status-text">Market is {stockDataTemp.marketStatus}</p>
         </div>
 
         {/* Tabs */}
@@ -125,16 +155,16 @@ const StockCard: React.FC<StockCardProps> = ({ stockSymbol }) => {
             <div className="price-summary">
               <div className="info-grid">
                 <div className="label">High Price:</div>
-                <div className="value">{stockData.highPrice}</div>
+                <div className="value">{stockData.highPrice.toFixed(2)}</div>
                 
                 <div className="label">Low Price:</div>
-                <div className="value">{stockData.lowPrice}</div>
+                <div className="value">{stockData.lowPrice.toFixed(2)}</div>
                 
                 <div className="label">Open Price:</div>
-                <div className="value">{stockData.openPrice}</div>
+                <div className="value">{stockData.openPrice.toFixed(2)}</div>
                 
                 <div className="label">Prev. Close:</div>
-                <div className="value">{stockData.prevClose}</div>
+                <div className="value">{stockData.prevClose.toFixed(2)}</div>
               </div>
             </div>
 
@@ -158,7 +188,7 @@ const StockCard: React.FC<StockCardProps> = ({ stockSymbol }) => {
             <div className="company-peers">
               <div className="peers-label">Company peers:</div>
               <div className="peers-list">
-                {stockData.peers.map(peer => (
+                {stockData.peers.map((peer: string) => (
                   <a 
                     key={peer} 
                     href="#" 
